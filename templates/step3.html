@@ -17,23 +17,23 @@
 	<th>Value</th>
 	<tr>
 		<td>issued_to</td>
-		<td>{{session.token_info.issued_to}}&nbsp;<em>(the application that was issued the token)</em></td>
+		<td>{% if session.token_info %}{{session.token_info.issued_to}}{% endif %}&nbsp;<em>(the application that was issued the token)</em></td>
 	</tr>
 	<tr>
 		<td>scope</td>
-		<td>{{session.token_info.scope}}&nbsp;<em>(the scopes that the user consented to)</em></td>
+		<td>{% if session.token_info %}{{session.token_info.scope}}{% endif %}&nbsp;<em>(the scopes that the user consented to)</em></td>
 	</tr>
 	<tr>
 		<td>audience</td>
-		<td>{{session.token_info.audience}}&nbsp;<em>(the protected resource the token may be sent to)</em></td>
+		<td>{% if session.token_info %}{{session.token_info.audience}}{% endif %}&nbsp;<em>(the protected resource the token may be sent to)</em></td>
 	</tr>
 	<tr>
 		<td>user_id</td>
-		<td>{{session.token_info.user_id}}&nbsp;<em>(the identifier of the user)</em></td>
+		<td>{% if session.token_info %}{{session.token_info.user_id}}{% endif %}&nbsp;<em>(the identifier of the user)</em></td>
 	</tr>
 	<tr>
 		<td>expires_in</td>
-		<td>{{session.token_info.expires_in}}&nbsp;<em>(the remaining lifetime of the token in seconds)</em></td>
+		<td>{% if session.token_info %}{{session.token_info.expires_in}}{% endif %}&nbsp;<em>(the remaining lifetime of the token in seconds)</em></td>
 	</tr>
 </table>
 </p>
@@ -53,6 +53,3 @@
       self.error(400)
       return
 </pre>
-
-
-
