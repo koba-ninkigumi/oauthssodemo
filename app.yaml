@@ -1,7 +1,14 @@
 application: oauthssodemo
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: yes
+
+libraries:
+- name: jinja2
+  version: latest
+- name: markupsafe
+  version: latest
 
 handlers:
 - url: /js
@@ -11,6 +18,6 @@ handlers:
   static_dir: css
       
 - url: .*
-  script: main.py
+  script: main.app
   
 
