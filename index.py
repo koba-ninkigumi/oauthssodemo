@@ -1,10 +1,9 @@
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp import util
-from google.appengine.ext.webapp import template
+import webapp2
+from webapp2_extras import jinja2
+from jinja2 import Environment, FileSystemLoader
 from google.appengine.api import urlfetch
-from django.utils import simplejson as json
-#from appengine_utilities import sessions
-from gaesessions import get_current_session
+import json
+from webapp2_extras import sessions
 from google.appengine.ext import db
 
 import logging
@@ -13,12 +12,15 @@ import os
 import urllib
 from account import Account
 
+env = Environment(loader = FileSystemLoader('templates', encoding='utf8'), autoescape = False)
+
 def get_target_url():
     params = get_params()
     return endpoints.AUTH_ENDPOINT + '?' + urllib.urlencode(params)
     
-def get_current_account():
-    session = get_current_session()
+def get_current_account(self):
+    session_store = sessions.get_store(request=self.request)
+    session = session_store.get_session()
     if 'user_id' in session:
         return Account.get_by_key_name(session['user_id'])
         
@@ -31,18 +33,19 @@ def get_params():
               'client_id':endpoints.CLIENT_ID
              }
 
-class MainHandler(webapp.RequestHandler):
+class MainHandler(webapp2.RequestHandler):
     def get(self):
         self.redirect('/step/1')
 
-class CallbackHandler(webapp.RequestHandler):
+class CallbackHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.out.write(template.render('templates/tokenspewer.html', {}))
+        template = env.get_template('tokenspewer.html')
+        self.response.out.write(template.render({}))
 
-class AcceptTokenHandler(webapp.RequestHandler):
+class AcceptTokenHandler(webapp2.RequestHandler):
     def get(self):
-        session = get_current_session()
-        session.regenerate_id()
+        session_store = sessions.get_store(request=self.request)
+        session = session_store.get_session()
         a_t = self.request.get('access_token')
         session['a_t'] = a_t
         
@@ -69,6 +72,7 @@ class AcceptTokenHandler(webapp.RequestHandler):
         
         # compose the URL returned in the callback (for the view)
         session['response_with_token'] = 'https://' + os.environ['HTTP_HOST'] + '/oauthcallback#' + self.request.query_string
+        session_store.save_sessions(self.response)
         
         acct = Account.get_by_key_name(user_id)
 
@@ -89,40 +93,44 @@ class AcceptTokenHandler(webapp.RequestHandler):
         acct.access_token = a_t
         acct.put()      
         
-class StepHandler(webapp.RequestHandler):
+class StepHandler(webapp2.RequestHandler):
     def get(self, stepNum):
         if int(stepNum) > 4 or int(stepNum) < 1:
             self.error(400)
             return
         
-        session = get_current_session()
+        session_store = sessions.get_store(request=self.request)
+        session = session_store.get_session()
         
         templateInfo = {
                             'targetUrl': get_target_url(), 
                             'session': session, 
                             'params': get_params(), 
                             'stepNum': stepNum, 
-                            'account':get_current_account(), 
+                            'account':get_current_account(self), 
                             'template_name': 
                             'step%s.html' % stepNum 
                         }
         
-        self.response.out.write(template.render('templates/stepTemplate.html', templateInfo))
+        template = env.get_template('stepTemplate.html')
+        self.response.out.write(template.render(templateInfo))
     
-class LogoutHandler(webapp.RequestHandler):
+class LogoutHandler(webapp2.RequestHandler):
     def get(self):
-        session = get_current_session()
+        session_store = sessions.get_store(request=self.request)
+        session = session_store.get_session()
         logging.info('Session: %s' % session)
-        session.terminate()
+        self.response.delete_cookie(session_store.config['cookie_name'])
         self.redirect('/')   
 
-class LogoutAndRemoveHandler(webapp.RequestHandler):
+class LogoutAndRemoveHandler(webapp2.RequestHandler):
     def get(self):
-        session = get_current_session()
+        session_store = sessions.get_store(request=self.request)
+        session = session_store.get_session()
         logging.info('Session: %s' % session)
         user_id = session['user_id'] 
         account = Account.get_by_key_name(user_id)
-        session.terminate()
+        self.response.delete_cookie(session_store.config['cookie_name'])
         account.delete()
         self.redirect('/') 
         
