@@ -14,22 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp import util
-from google.appengine.ext.webapp import template
+import webapp2
+from webapp2_extras import sessions
 
 import index
 
-def main():
-    application = webapp.WSGIApplication([('/step/(?P<stepNum>\d{1})', index.StepHandler),
+config = {}
+config['webapp2_extras.sessions'] = {
+    'secret_key': 'my-super-secret-key',
+}
+
+app = webapp2.WSGIApplication([('/step/(?P<stepNum>¥d{1})', index.StepHandler),
                                           ('/oauthcallback', index.CallbackHandler),
                                           ('/accepttoken', index.AcceptTokenHandler),
                                           ('/logout', index.LogoutHandler),
                                           ('/logoutandremove', index.LogoutAndRemoveHandler),
                                           ('/', index.MainHandler)],
-                                         debug=True)
-    util.run_wsgi_app(application)
-
-
-if __name__ == '__main__':
-    main()
+                                         config=config, debug=True)
